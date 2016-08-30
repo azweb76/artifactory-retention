@@ -1,0 +1,36 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: artifactory-retention
+  namespace: cicd
+  labels:
+    app: artifactory-retention
+spec:
+  containers:
+    - name: artifactory-retention
+      image: azweb76/artifactory-retention
+      imagePullPolicy: Always
+      env:
+        - name: ART_URL
+          value: https://artifactory.mydomain.com/artifactory
+        - name: ART_REPO
+          value: docker-my-local
+        - name: ART_USER
+          valueFrom:
+            secretKeyRef:
+              name: artifactory-user
+              key: artifactory-username
+        - name: ART_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: artifactory-user
+              key: artifactory-password
+      command:
+        - artret
+        - clean
+        - --repo
+        - '${ART_REPO}'
+        - --days
+        - '10'
+        - --interval
+        - '43200'

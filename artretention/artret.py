@@ -32,9 +32,18 @@ def main():
         action='append',
         help='required. folders to group by for cleaning. use \'*\' for all')
     parser.add_argument(
+        '-i', '--interval',
+        type=int,
+        default=0,
+        help='default 0. Run retention periodically in seconds.')
+    parser.add_argument(
         '--whatif',
         action='store_true',
         help='default false. don\'t actually delete, show log as if deleting')
+    parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        help='default false. suppress progress bar and results')
     parser.add_argument('-v',
                         '--verbose',
                         action='count',
@@ -46,13 +55,21 @@ def main():
 
 
 def deleteAction(args):
+    if args.interval > 0:
+        while True:
+            _deleteAction(args)
+            time.sleep(args.interval)
+    else:
+        _deleteAction(args)
+
+def _deleteAction(args):
     days = args.days
     skip = args.skip
     folders = args.folder
     art_repo = args.repo
 
     fldrs = {}
-    if args.verbose == 0:
+    if args.verbose == 0 and not args.quiet:
         core.progress(0, 1, prefix = '', suffix = 'getting unsed...', decimals = 2)
     items = artifactory.get_unused(days, art_repo)
 
@@ -90,18 +107,20 @@ def deleteAction(args):
 
         if args.verbose > 0:
             core.echo('Scanning folder %s for empties...' % fldr)
-        else:
+        elif not args.quiet:
             core.progress(item_count, total_item_count, prefix = '', suffix = '%s: folder cleanup...' % fldr, decimals = 2)
         artifactory.delete_empty_folders('%s/%s' % (
             art_repo, fldr), True, verbose=args.verbose, whatif=args.whatif)
         item_count += 1
 
-    core.progress(item_count, total_item_count, prefix = '', suffix = 'done!', decimals = 2)
-    core.echo('\n=== Retention Summary ===')
-    core.echo('The following artifacts were removed:\n')
-    for fldr in fldrs:
-        items = fldrs[fldr]
-        core.echo('%s: %s' % (fldr, len(items)))
+    if not args.quiet:
+        core.progress(item_count, total_item_count, prefix = '', suffix = 'done!', decimals = 2)
+        core.echo('\n=== Retention Summary ===')
+        core.echo('The following artifacts were removed:\n')
+
+        for fldr in fldrs:
+            items = fldrs[fldr]
+            core.echo('%s: %s' % (fldr, len(items)))
 
 
 def delete_items(items, repo, art_repo, args):
@@ -110,7 +129,7 @@ def delete_items(items, repo, art_repo, args):
     for d in items:
         p = d['uri'].split('/api/storage/')
         path = p[-1]
-        if args.verbose > 0:
+        if args.verbose > 0 and not args.quiet:
             core.echo('Deleting %s...' % path)
 
         if not args.whatif:

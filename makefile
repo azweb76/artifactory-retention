@@ -8,6 +8,5 @@ build_docker: prepare
 
 clean: build_docker
 
-
-publish: clean
+publish:
 	docker push azweb76/artifactory-retention

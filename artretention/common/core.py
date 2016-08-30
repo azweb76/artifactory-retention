@@ -29,7 +29,7 @@ def get_credentials(credentialType, user_env='USER', password_env='PASSWORD'):
 
   if credentialType not in _credentials:
     usernameVar = '%s_%s' % (credentialType.upper(), user_env.upper())
-    username = os.environ.get(usernameVar, os.environ['USER'])
+    username = os.environ.get(usernameVar, os.environ.get('USER', None))
 
     passwordVar = '%s_%s' % (credentialType.upper(), password_env.upper())
     password = None
