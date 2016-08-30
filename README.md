@@ -26,3 +26,13 @@ ART_USER=myuser artret clean --whatif --days 15 --folder 'myfolder' \
 |repo|string|required. Artifactory repository to scan|
 |whatif|flag|default false. don't actually delete, show log as if deleting|
 |verbose|flag (multiple)|default 0. show detailed logs|
+
+## Running in Kubernetes
+To run in a Kubernetes cluster, follow these steps:
+
+* Create a cicd namespace (To use your own, make sure you update the kube-pod.yaml file with that namespace).
+* Create a secret named artifactory-user in the cicd namespace with `artifactory-username` and `artifactory-password` keys containing the username/password to delete artifacts in your repo.
+* Copy and modify [kube-pod.yaml](kube-pod.yaml) to include your Artifactory URL (ART_URL) and Artifactory repository (ART_REPO). Additional options can be set in this file.
+* Run `kubectl create -f kube-pod.yaml`.
+
+> NOTE: Ensure the secret and pod exist in the same namespace (default for kube-pod is cicd).
