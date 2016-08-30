@@ -14,6 +14,7 @@ Strategy:
 * skip N most recent artifacts. this is useful for artifacts that are in production that are being used but have not been downloaded for a while.
 
 ```bash
+export ART_URL='https://artifactory.mydomain.com/artifactory'
 ART_USER=myuser artret clean --whatif --days 15 --folder 'myfolder' \
   --repo 'docker-group-local' -vvv
 ```
