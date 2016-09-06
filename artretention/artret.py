@@ -4,57 +4,63 @@
 import argparse
 import fnmatch
 import time
+import logging
 
 from common import artifactory, core
 
+log = logging.getLogger(name=__name__)
 
 def main():
     parser = argparse.ArgumentParser(
         description='Clean artifactory repository.')
-    parser.add_argument('action', help='action to perform (clean, etc)')
+    subparsers = parser.add_subparsers()
     parser.add_argument(
+        '-l',
+        '--log-level',
+        dest='log_level',
+        default='INFO',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='optional. Set the log level.')
+    parser.add_argument('--repo',
+                        type=str,
+                        required=True,
+                        help='required. Artifactory repository to scan')
+
+    parser_a = subparsers.add_parser('clean')
+    parser_a.add_argument(
         '--days',
         type=int,
         default=45,
         help='optional. default 45. number of days to check for unused artifacts')
-    parser.add_argument(
+    parser_a.add_argument(
         '--skip',
         type=int,
         default=50,
         help='optional. default 50. number of most recent artifacts in unused list to keep')
-    parser.add_argument('--repo',
-                        type=str,
-                        default='docker-wsb-local',
-                        help='	required. Artifactory repository to scan')
-    parser.add_argument(
+    parser_a.add_argument(
         '--folder',
         default=[],
         action='append',
-        help='required. folders to group by for cleaning. use \'*\' for all')
-    parser.add_argument(
+        help='folders to group by for cleaning. use \'*\' for all')
+    parser_a.add_argument(
         '-i', '--interval',
         type=int,
         default=0,
         help='default 0. Run retention periodically in seconds.')
-    parser.add_argument(
+    parser_a.add_argument(
         '--whatif',
         action='store_true',
         help='default false. don\'t actually delete, show log as if deleting')
-    parser.add_argument(
-        '-q', '--quiet',
-        action='store_true',
-        help='default false. suppress progress bar and results')
-    parser.add_argument('-v',
-                        '--verbose',
-                        action='count',
-                        help='show detailed logs')
+
+    parser_a.set_defaults(func=clean_cli)
 
     args = parser.parse_args()
-    if args.action == 'clean':
-        deleteAction(args)
+    logging.basicConfig(level=getattr(logging, args.log_level))
+
+    args.func(args)
 
 
-def deleteAction(args):
+def clean_cli(args):
     if args.interval > 0:
         while True:
             _deleteAction(args)
@@ -69,8 +75,6 @@ def _deleteAction(args):
     art_repo = args.repo
 
     fldrs = {}
-    if args.verbose == 0 and not args.quiet:
-        core.progress(0, 1, prefix = '', suffix = 'getting unsed...', decimals = 2)
     items = artifactory.get_unused(days, art_repo)
 
     if len(folders) == 0:
@@ -97,45 +101,48 @@ def _deleteAction(args):
     total_item_count = len(fldrs)
     for fldr in fldrs:
         items = fldrs[fldr]
+        items.sort(key=lambda x: x['lastDownloaded'], reverse=True)
         fldrs[fldr] = items[skip:]
 
     for fldr in fldrs:
         items = fldrs[fldr]
-        if args.verbose == 0:
-            core.progress(item_count, total_item_count, prefix = '', suffix = '%s: deleting...' % fldr, decimals = 2)
-        delete_items(items, fldr, art_repo, args)
+        subfolders = delete_items(items, fldr, art_repo, args)
 
-        if args.verbose > 0:
-            core.echo('Scanning folder %s for empties...' % fldr)
-        elif not args.quiet:
-            core.progress(item_count, total_item_count, prefix = '', suffix = '%s: folder cleanup...' % fldr, decimals = 2)
-        artifactory.delete_empty_folders('%s/%s' % (
-            art_repo, fldr), True, verbose=args.verbose, whatif=args.whatif)
+        if not args.whatif:
+            for f in subfolders:
+                log.info('Scanning folder %s for empties...' % f)
+                artifactory.delete_empty_folders(f, False, whatif=args.whatif)
+
         item_count += 1
 
-    if not args.quiet:
-        core.progress(item_count, total_item_count, prefix = '', suffix = 'done!', decimals = 2)
-        core.echo('\n=== Retention Summary ===')
-        core.echo('The following artifacts were removed:\n')
+    log.info('=== Retention Summary ===')
+    log.info('The following artifacts were removed:')
 
-        for fldr in fldrs:
-            items = fldrs[fldr]
-            core.echo('%s: %s' % (fldr, len(items)))
+    for fldr in fldrs:
+        items = fldrs[fldr]
+        log.info('%s: %s' % (fldr, len(items)))
 
 
 def delete_items(items, repo, art_repo, args):
-    items.sort(key=lambda x: x['lastDownloaded'], reverse=True)
     cnt = 0
+    subfolders = []
     for d in items:
         p = d['uri'].split('/api/storage/')
         path = p[-1]
-        if args.verbose > 0 and not args.quiet:
-            core.echo('Deleting %s...' % path)
+        subfolders.append('/'.join(path.split('/')[:3]))
+        log.info('Deleting %s (%s)...' % (path, d['lastDownloaded']))
 
         if not args.whatif:
             artifactory.del_item(path=path)
         cnt += 1
+    return unique(subfolders)
 
+def unique(k):
+    new_k = []
+    for elem in k:
+        if elem not in new_k:
+            new_k.append(elem)
+    return new_k
 
 if __name__ == '__main__':
     main()

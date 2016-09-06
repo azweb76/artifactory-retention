@@ -1,8 +1,11 @@
 import os
 
 import requests
+import logging
 
 from . import core
+
+log = logging.getLogger(name=__name__)
 
 
 def get_artifactory_url(path):
@@ -33,6 +36,7 @@ items.find({
 }).include("stat.downloaded","stat.downloads","created","repo","path","name")
 """ % (repo, days, days)
 
+    log.info('getting old artifacts...')
     r = requests.post(url, query, auth=auth)
 
     if r.status_code == 200:
@@ -67,20 +71,18 @@ def get_item(item=None, path=None):
         return r.json()
 
 
-def delete_empty_folders(path, is_root, verbose=0, whatif=False):
-    if verbose > 1:
-        core.echo('Checking %s...' % path)
+def delete_empty_folders(path, is_root, whatif=False):
+    log.debug('Checking %s...' % path)
     items = get_items(path)['children']
     if len(items) == 0:
         if not is_root:
-            if verbose > 0:
-                core.echo('Delete %s...' % path)
+            log.info('Delete %s...' % path)
             if not whatif:
                 del_item(path=path)
     else:
         for p in items:
             if p['folder']:
-                delete_empty_folders((path + p['uri']), False, verbose, whatif)
+                delete_empty_folders((path + p['uri']), False, whatif)
 
 
 def del_item(item=None, path=None):
