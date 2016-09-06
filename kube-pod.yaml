@@ -13,8 +13,6 @@ spec:
       env:
         - name: ART_URL
           value: https://artifactory.mydomain.com/artifactory
-        - name: ART_REPO
-          value: docker-my-local
         - name: ART_USER
           valueFrom:
             secretKeyRef:
@@ -27,10 +25,10 @@ spec:
               key: artifactory-password
       command:
         - artret
-        - clean
         - --repo
-        - '${ART_REPO}'
+        - docker-my-local
+        - clean
         - --days
         - '10'
         - --interval
-        - '43200'
+        - '86400'

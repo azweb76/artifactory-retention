@@ -3,7 +3,7 @@ Tools for maintaining Artifactory retention.
 
 ## Install
 ```bash
-pip install https://github.com/azweb76/artifactory-retention [--upgrade]
+pip install git+https://github.com/azweb76/artifactory-retention [--upgrade]
 ```
 
 ## Usage (clean)
@@ -15,8 +15,7 @@ Strategy:
 
 ```bash
 export ART_URL='https://artifactory.mydomain.com/artifactory'
-ART_USER=myuser artret clean --whatif --days 15 --folder 'myfolder' \
-  --repo 'docker-group-local' -vvv
+ART_USER=myuser artret --repo 'docker-group-local' clean --whatif --days 15 --folder 'myfolder'
 ```
 
 |option|type|description|
@@ -26,7 +25,6 @@ ART_USER=myuser artret clean --whatif --days 15 --folder 'myfolder' \
 |skip|int|optional. default 50. number of most recent artifacts in unused list to keep|
 |repo|string|required. Artifactory repository to scan|
 |whatif|flag|default false. don't actually delete, show log as if deleting|
-|verbose|flag (multiple)|default 0. show detailed logs|
 
 ## Running in Kubernetes
 To run in a Kubernetes cluster, follow these steps:
