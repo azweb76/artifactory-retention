@@ -8,5 +8,8 @@ build_docker: prepare
 
 clean: build_docker
 
+test:
+	poetry run pytest
+
 publish:
 	docker push azweb76/artifactory-retention

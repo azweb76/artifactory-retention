@@ -22,15 +22,20 @@ def get_unused(days, repo):
     query = """
 items.find({
   "repo": {"$eq" : "%s"},
-  "$or": [
+  "$and": [
+    {"name":{"$eq":"manifest.json"}},
     {
-        "stat.downloaded": {"$before": "%sd"}
-    },
-    {
-        "$and": [
-            {"stat.downloads": {"$eq":null}},
-            {"created": {"$before": "%sd"}}
-        ]
+      "$or": [
+        {
+            "stat.downloaded": {"$before": "%sd"}
+        },
+        {
+            "$and": [
+                {"stat.downloads": {"$eq":null}},
+                {"created": {"$before": "%sd"}}
+            ]
+        }
+      ]
     }
   ]
 }).include("stat.downloaded","stat.downloads","created","repo","path","name")

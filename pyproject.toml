@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "artretention"
+version = "0.1.0"
+description = "Artifactory Docker image retention"
+authors = ["Daniel Clayton <dclayton@godaddy.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+requests = "^2.25.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.2"
+
+[tool.poetry.scripts]
+artret = 'artretention.artret:main'
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

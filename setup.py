@@ -12,7 +12,7 @@ setup(
     license = "MIT",
     keywords = "artifactory registries registry retention",
     url = "https://github.com/azweb76/artifactory-retention",
-    packages=['artretention', 'artretention.common'],
+    packages=['artretention', 'artretention.common', '.'],
     entry_points={
         'console_scripts': [
             'artret=artretention.artret:main',

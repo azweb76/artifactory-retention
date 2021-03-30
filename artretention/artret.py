@@ -6,7 +6,7 @@ import fnmatch
 import time
 import logging
 
-from common import artifactory, core
+from .common import artifactory, core
 
 log = logging.getLogger(name=__name__)
 
@@ -129,11 +129,17 @@ def delete_items(items, repo, art_repo, args):
     for d in items:
         p = d['uri'].split('/api/storage/')
         path = p[-1]
-        subfolders.append('/'.join(path.split('/')[:3]))
-        log.info('Deleting %s (%s)...' % (path, d['lastDownloaded']))
+        tag_path = path.split('/manifest.json')[0]
+        log.info(f"Deleting docker tag {tag_path}...")
+        tag_artifacts = artifactory.get_items(tag_path)['children']
+        for tag_artifact in tag_artifacts:
+            artifact_path = tag_path + tag_artifact['uri']
+            log.info(f"Deleting docker tag artifact {artifact_path}...")
+            if not args.whatif:
+                artifactory.del_item(path=artifact_path)
 
         if not args.whatif:
-            artifactory.del_item(path=path)
+            artifactory.del_item(path=tag_path)
         cnt += 1
     return unique(subfolders)
 

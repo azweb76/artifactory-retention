@@ -1,11 +1,8 @@
-from centos:7
+from python:3.7-slim-stretch
 
 MAINTAINER Dan Clayton <dclayton@godaddy.com>
 
 WORKDIR /src
-
-RUN yum install epel-release -y
-RUN yum install python-pip git -y
 
 COPY . /src/
 
