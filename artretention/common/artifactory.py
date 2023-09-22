@@ -76,18 +76,18 @@ def get_item(item=None, path=None):
         return r.json()
 
 
-def delete_empty_folders(path, is_root, whatif=False):
+def delete_empty_folders(path, is_root, dry_run=False):
     log.debug('Checking %s...' % path)
     items = get_items(path)['children']
     if len(items) == 0:
         if not is_root:
             log.info('Delete %s...' % path)
-            if not whatif:
+            if not dry_run:
                 del_item(path=path)
     else:
         for p in items:
             if p['folder']:
-                delete_empty_folders((path + p['uri']), False, whatif)
+                delete_empty_folders((path + p['uri']), False, dry_run)
 
 
 def del_item(item=None, path=None):

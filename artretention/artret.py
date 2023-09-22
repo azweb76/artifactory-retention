@@ -48,7 +48,7 @@ def main():
         default=0,
         help='default 0. Run retention periodically in seconds.')
     parser_a.add_argument(
-        '--whatif',
+        '--dry-run',
         action='store_true',
         help='default false. don\'t actually delete, show log as if deleting')
 
@@ -93,8 +93,8 @@ def _deleteAction(args):
             fldrs[fldr].append({
                 'uri': item['uri'],
                 'folder': fldr,
-                'lastDownloaded': time.strptime(item['lastDownloaded'][0:-7],
-                                                "%Y-%m-%dT%H:%M:%S.%f")
+                'lastDownloaded': time.strptime(item['lastDownloaded'],
+                                                "%Y-%m-%dT%H:%M:%S.%f%z")
             })
 
     item_count = 0
@@ -108,10 +108,10 @@ def _deleteAction(args):
         items = fldrs[fldr]
         subfolders = delete_items(items, fldr, art_repo, args)
 
-        if not args.whatif:
+        if not args.dry_run:
             for f in subfolders:
                 log.info('Scanning folder %s for empties...' % f)
-                artifactory.delete_empty_folders(f, False, whatif=args.whatif)
+                artifactory.delete_empty_folders(f, False, dry_run=args.dry_run)
 
         item_count += 1
 
@@ -130,15 +130,15 @@ def delete_items(items, repo, art_repo, args):
         p = d['uri'].split('/api/storage/')
         path = p[-1]
         tag_path = path.split('/manifest.json')[0]
-        log.info(f"Deleting docker tag {tag_path}...")
+        log.info(f"Deleting docker tag {tag_path} (dry-run={args.dry_run})...")
         tag_artifacts = artifactory.get_items(tag_path)['children']
         for tag_artifact in tag_artifacts:
             artifact_path = tag_path + tag_artifact['uri']
-            log.info(f"Deleting docker tag artifact {artifact_path}...")
-            if not args.whatif:
+            log.info(f"Deleting docker tag artifact {artifact_path} (dry-run={args.dry_run})...")
+            if not args.dry_run:
                 artifactory.del_item(path=artifact_path)
 
-        if not args.whatif:
+        if not args.dry_run:
             artifactory.del_item(path=tag_path)
         cnt += 1
     return unique(subfolders)
