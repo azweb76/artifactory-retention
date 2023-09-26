@@ -3,6 +3,8 @@ import os
 import requests
 import logging
 
+from retry import retry
+
 from . import core
 
 log = logging.getLogger(name=__name__)
@@ -14,6 +16,7 @@ def get_artifactory_url(path):
     return full_path
 
 
+@retry(tries=10, delay=10, backoff=1.2, max_delay=60, logger=log)
 def get_unused(days, repo):
     auth = core.get_credentials(
         'ART', user_env='USER', password_env='PASSWORD')
@@ -57,6 +60,7 @@ items.find({
     raise RuntimeError(r.text)
 
 
+@retry(tries=10, delay=10, backoff=1.2, max_delay=60, logger=log)
 def get_items(path):
     auth = core.get_credentials(
         'ART', user_env='USER', password_env='PASSWORD')
@@ -66,6 +70,7 @@ def get_items(path):
         return r.json()
 
 
+@retry(tries=10, delay=10, backoff=1.2, max_delay=60, logger=log)
 def get_item(item=None, path=None):
     auth = core.get_credentials(
         'ART', user_env='USER', password_env='PASSWORD')
@@ -76,6 +81,7 @@ def get_item(item=None, path=None):
         return r.json()
 
 
+@retry(tries=10, delay=10, backoff=1.2, max_delay=60, logger=log)
 def delete_empty_folders(path, is_root, dry_run=False):
     log.debug('Checking %s...' % path)
     items = get_items(path)['children']
@@ -90,6 +96,7 @@ def delete_empty_folders(path, is_root, dry_run=False):
                 delete_empty_folders((path + p['uri']), False, dry_run)
 
 
+@retry(tries=10, delay=10, backoff=1.2, max_delay=60, logger=log)
 def del_item(item=None, path=None):
     auth = core.get_credentials(
         'ART', user_env='USER', password_env='PASSWORD')

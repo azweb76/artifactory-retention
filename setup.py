@@ -5,6 +5,7 @@ setup(
     version="1.0.0",
     install_requires=[
         "requests",
+        "retry"
     ],
     author = "Dan Clayton",
     author_email = "dclayton@godaddy.com",
